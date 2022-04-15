@@ -5,9 +5,9 @@ Added README
 ### I followed this and got it working great, but I wanted to add a little more to it.
 
 ## What I added
-Firebase Authentication
-Firebase Login
-Player Model for Firebase
+Firebase Authentication\
+Firebase Login\
+Player Model for Firebase\
 Leaderboard
 
 ## What I learned
