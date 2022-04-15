@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Firebase
 
 // currentWord is the word for the game to guess
 // tryindex is the current row we are trying on, so we start on row 0
@@ -15,7 +16,11 @@ class WordleDataModel: ObservableObject {
     @Published var incorrectAttempts = [Int](repeating: 0, count: 6)
     @Published var toastText: String?
     @Published var showStats: Bool = false
+
     @AppStorage("hardMode") var hardMode = false
+    
+    @Published var player: Player
+    @Published var allPlayers: [Player] = []
     
     var keyColors = [String : Color]()
     var matchedLetters = [String]()
@@ -39,6 +44,9 @@ class WordleDataModel: ObservableObject {
     
     init() {
         currentStat = Statistic.loadStat()
+        player = Player(playerName: "", email: "", userId: "", numberOfGames: 0, numberOfWins: 0, maxStreak: 0, currentStreak: 0)
+        fetchPlayerInfo()
+        fetchPlayers()
         newGame()
     }
     
@@ -80,6 +88,12 @@ class WordleDataModel: ObservableObject {
             print("You Win!")
             setCurrentGuessColors()
             currentStat.update(win: true, index: tryIndex)
+            player.numberOfWins += 1
+            player.numberOfGames += 1
+            player.currentStreak = player.currentStreak + 1
+            player.maxStreak = max(player.currentStreak, player.maxStreak)
+            savePlayerInfo()
+            fetchPlayers()
             showToast(with: toastWords[tryIndex])
             inPlay = false
         } else if verifyWord() {
@@ -99,9 +113,13 @@ class WordleDataModel: ObservableObject {
             
             if tryIndex == 6 {
                 currentStat.update(win: false)
+                player.currentStreak = 0
+                player.numberOfGames += 1
                 gameOver = true
                 inPlay = false
                 showToast(with: selectedWord)
+                savePlayerInfo()
+                fetchPlayers()
             }
         } else {
             withAnimation {
@@ -259,6 +277,85 @@ class WordleDataModel: ObservableObject {
             
         default:
             break
+        }
+    }
+    
+    func savePlayerInfo() {
+        let userId = Auth.auth().currentUser?.uid
+        
+        let db = Firestore.firestore()
+        let ref = db.collection("Players").document("\(userId ?? "")")
+        ref.updateData(
+            [
+                "numberOfWins": player.numberOfWins,
+                "numberOfGames": player.numberOfGames,
+                "maxStreak": player.maxStreak,
+                "currentStreak": player.currentStreak
+            ]
+            ) { error in
+            if let error = error {
+                print(error.localizedDescription)
+            }
+        }
+        
+        fetchPlayerInfo()
+        
+    }
+    
+    func fetchPlayerInfo() {
+        let userId = Auth.auth().currentUser?.uid
+        
+        if userId != nil {
+            let db = Firestore.firestore()
+            let ref = db.collection("Players").document("\(userId ?? "")")
+            ref.getDocument { snapshot, error in
+                if let error = error {
+                    print(error.localizedDescription)
+                }
+                
+                if let snapshot = snapshot {
+                    let data = snapshot.data()
+                    let name = data?["playerName"] as? String ?? ""
+                    let email = data?["email"] as? String ?? ""
+                    let id = data?["userId"] as? String ?? ""
+                    let games = data?["numberOfGames"] as? Int ?? 0
+                    let wins = data?["numberOfWins"] as? Int ?? 0
+                    let maxStreak = data?["maxStreak"] as? Int ?? 0
+                    let currentStreak = data?["currentStreak"] as? Int ?? 0
+                    
+                    self.player = Player(playerName: name, email: email, userId: id, numberOfGames: games, numberOfWins: wins, maxStreak: maxStreak, currentStreak: currentStreak)
+                }
+            }
+        }
+    }
+    
+    func fetchPlayers() {
+        allPlayers.removeAll()
+        let db = Firestore.firestore()
+        let ref = db.collection("Players")
+            .order(by: "numberOfGames", descending: true)
+
+        ref.getDocuments { snapshot, error in
+            guard error == nil else {
+                print(error?.localizedDescription)
+                return
+            }
+
+            if let snapshot = snapshot {
+                for document in snapshot.documents {
+                    let data = document.data()
+                    let name = data["playerName"] as? String ?? ""
+                    let email = data["email"] as? String ?? ""
+                    let id = data["userId"] as? String ?? ""
+                    let games = data["numberOfGames"] as? Int ?? 0
+                    let wins = data["numberOfWins"] as? Int ?? 0
+                    let maxStreak = data["maxStreak"] as? Int ?? 0
+                    let currentStreak = data["currentStreak"] as? Int ?? 0
+
+                    let player = Player(playerName: name, email: email, userId: id, numberOfGames: games, numberOfWins: wins, maxStreak: maxStreak, currentStreak: currentStreak)
+                    self.allPlayers.append(player)
+                }
+            }
         }
     }
 }

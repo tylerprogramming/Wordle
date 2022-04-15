@@ -9,8 +9,10 @@ import SwiftUI
 
 struct GameView: View {
     @EnvironmentObject var dm: WordleDataModel
+    @EnvironmentObject var dataManager: DataManager
     @State private var showSettings: Bool = false
     @State private var showHelp: Bool = false
+    @State private var showLeaderboard: Bool = false
     
     var body: some View {
         ZStack {
@@ -48,10 +50,17 @@ struct GameView: View {
                                         .foregroundColor(.primary)
                                 }
                             }
+                            
                             Button {
                                 showHelp.toggle()
                             } label: {
                                 Image(systemName: "questionmark.circle")
+                            }
+                            
+                            Button {
+                                showLeaderboard.toggle()
+                            } label: {
+                                Image(systemName: "person.3")
                             }
                         }
                     }
@@ -73,6 +82,7 @@ struct GameView: View {
                             }
                             Button {
                                 showSettings.toggle()
+                                dm.fetchPlayers()
                             } label: {
                                Image(systemName: "gearshape.fill")
                             }
@@ -81,6 +91,9 @@ struct GameView: View {
                 }
                 .sheet(isPresented: $showSettings) {
                     SettingsView()
+                }
+                .sheet(isPresented: $showLeaderboard) {
+                    LeaderboardView()
                 }
             }
             

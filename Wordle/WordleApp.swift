@@ -6,17 +6,24 @@
 //
 
 import SwiftUI
+import Firebase
 
 @main
 struct WordleApp: App {
     @StateObject var dm = WordleDataModel()
     @StateObject var csManager = ColorSchemeManager()
+    @StateObject var dataManager = DataManager()
+    
+    init() {
+        FirebaseApp.configure()
+    }
     
     var body: some Scene {
         WindowGroup {
-            GameView()
+            LoginView()
                 .environmentObject(dm)
                 .environmentObject(csManager)
+//                .environmentObject(dataManager)
                 .onAppear {
                     csManager.applyColorScheme()
                 }

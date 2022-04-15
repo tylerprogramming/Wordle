@@ -32,13 +32,13 @@ struct StatsView: View {
                 SingleStat(value: dm.currentStat.games, text: "Played")
                 
                 if dm.currentStat.games != 0 {
-                    SingleStat(value: Int(100 * dm.currentStat.wins / dm.currentStat.games), text: "Win %")
+                    SingleStat(value: Int(100 * dm.player.numberOfWins / dm.player.numberOfGames), text: "Win %")
                 }
                 
-                SingleStat(value: dm.currentStat.streak, text: "Current Streak")
+                SingleStat(value: dm.player.currentStreak, text: "Current Streak")
                     .fixedSize(horizontal: false, vertical: true)
                 
-                SingleStat(value: dm.currentStat.maxStreak, text: "Max Streak")
+                SingleStat(value: dm.player.maxStreak, text: "Max Streak")
                     .fixedSize(horizontal: false, vertical: true)
             }
             Text("GUESS DISTRIBUTION")
@@ -96,13 +96,18 @@ struct StatsView: View {
             }
             
             Spacer()
+            
         }
         .padding(.horizontal, 40)
-        .frame(width: 320, height: 370)
+        .frame(width: 320, height: 500)
         .background(RoundedRectangle(cornerRadius: 15).fill(Color.systemBackground))
         .padding()
         .shadow(color: .black.opacity(0.3), radius: 10)
         .offset(y: -70)
+        .onAppear {
+            print("getting players.")
+            print(dm.allPlayers)
+        }
     }
 }
 
